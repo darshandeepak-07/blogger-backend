@@ -1,34 +1,59 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { LoginDto, RefreshTokenDto } from './dto/login.dto';
+import { SignUpDto } from './dto/signup.dto';
+import { JwtAuthGuard } from 'src/guards/jwt.auth.guard';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
+import { RolesGuard } from 'src/guards/role.guard';
+import { Roles } from 'src/decorators/role.decorator';
+import { UserRole } from 'src/schemas/user.schema';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('signup')
+  signUp(@Body() signUpDto: SignUpDto) {
+    return this.authService.signUp(signUpDto);
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  @Post('verify')
+  verifyEmail(
+    @Body() data: { email: string; code: string; signUpData: SignUpDto },
+  ) {
+    return this.authService.verifyEmailAndCreateUser(
+      data.email,
+      data.code,
+      data.signUpData,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
+  @Post('login')
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
+  @Post('refresh')
+  refresh(@Body() refreshDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshDto.refreshToken);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Get('protected')
+  protected(@CurrentUser() user: { userId: string; role: string }) {
+    return {
+      message: '🎉 You are authenticated!',
+      user: user.userId,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin')
+  getAdminData(@CurrentUser() user) {
+    return {
+      message: 'Welcome Admin',
+      user,
+    };
   }
 }
