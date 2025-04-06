@@ -6,6 +6,7 @@ import { EmailModule } from './modules/email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PostModule } from './modules/post/post.module';
+import { TagModule } from './modules/tag/tag.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PostModule } from './modules/post/post.module';
       }),
     }),
     PostModule,
+    TagModule,
   ],
   controllers: [AppController],
   providers: [AppService],
